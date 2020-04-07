@@ -1,0 +1,4 @@
+stages:
+  - name: "prod"
+    deployment_strategy: "direct"
+    test_strategy: ""

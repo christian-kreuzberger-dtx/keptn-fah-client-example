@@ -1,0 +1,75 @@
+---
+# based on https://github.com/richstokes/k8s-fah/blob/master/folding-cpu.yaml (Copyright 2020 richstokes et al)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fah-cpu
+  labels:
+    app: fah-cpu
+spec:
+  selector:
+    matchLabels:
+      app: fah-cpu
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 100%
+      maxSurge: 100%
+  template:
+    metadata:
+      labels:
+        app: fah-cpu
+    spec:
+      containers:
+        - name: fah-cpu
+          image: {{ .Values.image }}
+          # --run-as UID should match runAsUser value in containers securityContext
+          command:
+            - "/usr/bin/FAHClient"
+            - "--allow=0/0:7396"
+            - "--web-allow=0/0:7396"
+            - "--user=Keptn" # auto generated for the cluster
+            - "--team=259797" # Keptn Team ID
+            - "--run-as"
+            - "1234"
+            - "--pid-file=/var/lib/fahclient/fahclient.pid"
+            - "--power=full"
+            - "--gpu=false"
+          ports:
+          - containerPort: 7396
+          resources:
+            limits:
+              cpu: "{{ .Values.replicaCount }}" # How much CPU you wish to donate per pod
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          # Make the container harder to break out of or exploit
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1234
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 7396
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7396
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 15
+          volumeMounts:
+            - mountPath: /var/lib/fahclient
+              name: fahclient
+      # We make an emptyDir to mount on the work directory /var/lib/fahclient
+      # so we can make the rest of the container's root filesystem read-only
+      volumes:
+        - name: fahclient
+          emptyDir: {}

@@ -1,0 +1,2 @@
+image: docker.io/richstokes20/fah-covid:latest
+replicaCount: 1

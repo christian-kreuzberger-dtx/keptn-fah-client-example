@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for the folding at home cpu container
+name: fah-cpu
+version: 0.1.0
